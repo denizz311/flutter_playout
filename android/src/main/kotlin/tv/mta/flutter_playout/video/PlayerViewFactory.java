@@ -3,13 +3,13 @@ package tv.mta.flutter_playout.video;
 import android.app.Activity;
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
-import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 import io.flutter.plugin.platform.PlatformViewFactory;
 import io.flutter.plugin.platform.PlatformViewRegistry;
-import io.flutter.view.FlutterNativeView;
 
 public class PlayerViewFactory extends PlatformViewFactory {
 
@@ -19,24 +19,23 @@ public class PlayerViewFactory extends PlatformViewFactory {
 
     private final BinaryMessenger messenger;
 
-    public static PlayerViewFactory registerWith(PlatformViewRegistry viewRegistry, BinaryMessenger messenger, Activity activity) {
+    public static PlayerViewFactory registerWith(PlatformViewRegistry viewRegistry, BinaryMessenger messenger) {//, Activity activity) {
 
-        final PlayerViewFactory plugin = new PlayerViewFactory(messenger, activity);
+        final PlayerViewFactory plugin = new PlayerViewFactory(messenger);
 
         viewRegistry.registerViewFactory("tv.mta/NativeVideoPlayer", plugin);
 
         return plugin;
     }
 
-    public PlayerViewFactory(BinaryMessenger messenger, Activity activity) {
+    public PlayerViewFactory(BinaryMessenger messenger) {
 
         super(JSONMessageCodec.INSTANCE);
-
-        this.activity = activity;
 
         this.messenger = messenger;
     }
 
+    @NonNull
     @Override
     public PlatformView create(Context context, int id, Object args) {
 
@@ -60,5 +59,9 @@ public class PlayerViewFactory extends PlatformViewFactory {
 
     public void onDetachActivity() {
         onDestroy();
+    }
+
+    public void addActivity(Activity activity) {
+        this.activity = activity;
     }
 }

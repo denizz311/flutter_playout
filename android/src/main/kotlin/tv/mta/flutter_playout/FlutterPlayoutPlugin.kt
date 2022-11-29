@@ -9,6 +9,11 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry.Registrar
 
 class FlutterPlayoutPlugin: FlutterPlugin, ActivityAware {
 
@@ -21,17 +26,18 @@ class FlutterPlayoutPlugin: FlutterPlugin, ActivityAware {
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     try {
       playerViewFactory = PlayerViewFactory.registerWith(
-              flutterPluginBinding.platformViewRegistry,
-              flutterPluginBinding.binaryMessenger,
-              activity)
+        flutterPluginBinding.platformViewRegistry,
+        flutterPluginBinding.binaryMessenger)
     } catch (e: Exception) {
+      throw e
     }
 
-    try {
+    /*try {
       audioPlayerFactory = AudioPlayer.registerWith(flutterPluginBinding.binaryMessenger,
               activity, flutterPluginBinding.applicationContext)
     } catch (e: Exception) {
-    }
+      throw e
+    }*/
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -42,6 +48,7 @@ class FlutterPlayoutPlugin: FlutterPlugin, ActivityAware {
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
     playerViewFactory.onAttachActivity(binding.activity)
+    playerViewFactory.addActivity(binding.activity)
     audioPlayerFactory.onAttachActivity(binding.activity)
   }
 
