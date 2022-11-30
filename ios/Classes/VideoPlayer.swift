@@ -1,10 +1,3 @@
-//
-//  VideoPlayer.swift
-//  flutter_playout
-//
-//  Created by Khuram Khalid on 08/10/2019.
-//
-
 import Foundation
 import AVFoundation
 import Flutter
@@ -67,6 +60,7 @@ class VideoPlayer: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterPlatfor
     /* player metadata */
     var url:String = ""
     var autoPlay:Bool = true
+    var isFullScreen:Bool = false
     var loop:Bool = false
     var title:String = ""
     var subtitle:String = ""
@@ -128,6 +122,7 @@ class VideoPlayer: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterPlatfor
         self.showControls = parsedData["showControls"] as! Bool
         self.position = parsedData["position"] as! Double
         self.artworkUrl = parsedData["artworkUrl"] as? String
+        self.isFullScreen = parsedData["isFullScreen"] as! Bool
 
         setupPlayer()
     }
@@ -164,6 +159,7 @@ class VideoPlayer: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterPlatfor
                 self.showControls = parsedData["showControls"] as! Bool
                 self.position = parsedData["position"] as! Double
                 self.artworkUrl = parsedData["artworkUrl"] as? String
+                self.isFullScreen = parsedData["isFullScreen"] as! Bool
 
                 self.onMediaChanged()
 
@@ -192,6 +188,23 @@ class VideoPlayer: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterPlatfor
                 self.onShowControlsFlagChanged()
 
                 result(true)
+            }
+
+            if ("onFullScreenChanged" == call.method) {
+
+                /* data as JSON */
+                let parsedData = call.arguments as! [String: Bool]
+
+                /* set incoming player controls flag */
+                self.isFullScreen = parsedData["isFullScreen"] as! Bool
+
+                if (self.isFullScreen == true) {
+                    self.playerViewController?.goFullScreen()
+                } else {
+                    self.playerViewController?.quitFullScreen()
+                }
+
+                result(self.isFullScreen)
             }
 
             else if ("resume" == call.method) {
@@ -698,3 +711,37 @@ class VideoPlayer: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterPlatfor
     }
 }
 
+extension AVPlayerViewController {
+
+    func goFullScreen() {
+        let selectorName: String = {
+            if #available(iOS 11.3, *) {
+                return "_transitionToFullScreenAnimated:interactive:completionHandler:"
+            } else if #available(iOS 11, *) {
+                return "_transitionToFullScreenAnimated:completionHandler:"
+            } else {
+                return "_transitionToFullScreenViewControllerAnimated:completionHandler:"
+            }
+        }()
+        let selectorToForceFullScreenMode = NSSelectorFromString(selectorName)
+
+        if self.responds(to: selectorToForceFullScreenMode) {
+            self.perform(selectorToForceFullScreenMode, with: true, with: nil)
+        }
+    }
+
+    func quitFullScreen() {
+        let selectorName: String = {
+            if #available(iOS 11, *) {
+                return "_transitionFromFullScreenAnimated:completionHandler:"
+            } else {
+                return "_transitionFromFullScreenViewControllerAnimated:completionHandler:"
+            }
+        }()
+        let selectorToForceQuitFullScreenMode = NSSelectorFromString(selectorName)
+
+        if self.responds(to: selectorToForceQuitFullScreenMode) {
+            self.perform(selectorToForceQuitFullScreenMode, with: true, with: nil)
+        }
+    }
+}
