@@ -39,6 +39,8 @@ class Video extends StatefulWidget {
   final double position;
   final Function? onViewCreated;
   final PlayerState desiredState;
+  final bool isFullScreen;
+  final Stream<bool>? isFullScreenStream;
 
   const Video(
       {Key? key,
@@ -55,6 +57,8 @@ class Video extends StatefulWidget {
       this.position = -1,
       this.onViewCreated,
       this.desiredState = PlayerState.PLAYING,
+      this.isFullScreen = false,
+      this.isFullScreenStream,
       this.textTracks})
       : super(key: key);
 
@@ -71,6 +75,9 @@ class _VideoState extends State<Video> {
   void initState() {
     super.initState();
     _setupPlayer();
+    widget.isFullScreenStream?.listen((event) {
+      _onFullScreenChanged(forceState: event);
+    });
   }
 
   @override
@@ -130,6 +137,7 @@ class _VideoState extends State<Video> {
             "artworkUrl": widget.artworkUrl ?? "",
             "preferredAudioLanguage": widget.preferredAudioLanguage ?? "mul",
             "isLiveStream": widget.isLiveStream,
+            "isFullScreen": widget.isFullScreen,
             "position": widget.position,
           },
           creationParamsCodec: const JSONMessageCodec(),
@@ -163,6 +171,9 @@ class _VideoState extends State<Video> {
     }
     if (oldWidget.desiredState != widget.desiredState) {
       _onDesiredStateChanged(oldWidget);
+    }
+    if (oldWidget.isFullScreen != widget.isFullScreen) {
+      _onFullScreenChanged();
     }
     if (oldWidget.showControls != widget.showControls) {
       _onShowControlsFlagChanged();
@@ -205,6 +216,12 @@ class _VideoState extends State<Video> {
         _pausePlayback();
         break;
     }
+  }
+
+  void _onFullScreenChanged({bool? forceState}) async {
+    _methodChannel!.invokeMethod("onFullScreenChanged", {
+      "isFullScreen": forceState ?? widget.isFullScreen,
+    });
   }
 
   void _onShowControlsFlagChanged() async {
