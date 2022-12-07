@@ -1,19 +1,14 @@
 package tv.mta.flutter_playout
 
 import android.app.Activity
-import tv.mta.flutter_playout.audio.AudioPlayer
-import tv.mta.flutter_playout.video.PlayerViewFactory
-
+import android.content.Intent
+import android.util.Log
 import androidx.annotation.NonNull
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
+import tv.mta.flutter_playout.audio.AudioPlayer
+import tv.mta.flutter_playout.video.PlayerViewFactory
 
 class FlutterPlayoutPlugin: FlutterPlugin, ActivityAware {
 
@@ -32,12 +27,12 @@ class FlutterPlayoutPlugin: FlutterPlugin, ActivityAware {
       throw e
     }
 
-    /*try {
+    try {
       audioPlayerFactory = AudioPlayer.registerWith(flutterPluginBinding.binaryMessenger,
               activity, flutterPluginBinding.applicationContext)
     } catch (e: Exception) {
       throw e
-    }*/
+    }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

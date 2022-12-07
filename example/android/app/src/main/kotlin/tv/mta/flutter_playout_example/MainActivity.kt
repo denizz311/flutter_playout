@@ -9,8 +9,7 @@ class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         PlayerViewFactory.registerWith(
                 flutterEngine.platformViewsController.registry,
-                flutterEngine.dartExecutor.binaryMessenger,
-                this)
+                flutterEngine.dartExecutor.binaryMessenger)
 
         AudioPlayer.registerWith(
                 flutterEngine.dartExecutor.binaryMessenger,

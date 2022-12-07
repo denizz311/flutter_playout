@@ -19,7 +19,7 @@ public class PlayerViewFactory extends PlatformViewFactory {
 
     private final BinaryMessenger messenger;
 
-    public static PlayerViewFactory registerWith(PlatformViewRegistry viewRegistry, BinaryMessenger messenger) {//, Activity activity) {
+    public static PlayerViewFactory registerWith(PlatformViewRegistry viewRegistry, BinaryMessenger messenger) {
 
         final PlayerViewFactory plugin = new PlayerViewFactory(messenger);
 

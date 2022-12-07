@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -19,6 +20,9 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.content.pm.ActivityInfo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,6 +34,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
@@ -41,9 +46,11 @@ import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -70,16 +77,17 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
      * Playback Rate for the MediaPlayer is always 1.0.
      */
     private static final float PLAYBACK_RATE = 1.0f;
+    private static final int requestCode = 201;
     /**
      * The notification id.
      */
     private static final int NOTIFICATION_ID = 0;
-    public static ExoPlayer activePlayer;
+    public static SimpleExoPlayer activePlayer;
     private final String TAG = "PlayerLayout";
     /**
      * Reference to the {@link ExoPlayer}
      */
-    ExoPlayer mPlayerView;
+    SimpleExoPlayer mPlayerView;
     boolean isBound = true;
     private PlayerLayout instance;
     /**
@@ -205,6 +213,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
             try {
                 this.subtitles = args.getJSONArray("subtitles");
+
             } catch (Exception e) {/* ignore */}
 
             initPlayer();
@@ -241,10 +250,33 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                         .setPreferredAudioLanguage(this.preferredAudioLanguage)
                         .setPreferredTextLanguage(this.preferredTextLanguage));
 
-        mPlayerView = new ExoPlayer.Builder(context)
+        mPlayerView = new SimpleExoPlayer.Builder(context)
                 .setUseLazyPreparation(true)
                 .setTrackSelector(trackSelector)
                 .build();
+
+        View controlView = this.findViewById(R.id.exo_basic_controls);
+            controlView.findViewById(R.id.exo_fullscreen_button)
+                       .setOnClickListener(new View.OnClickListener() {
+                           @Override
+                           public void onClick(View v) {
+
+                           Intent intent = new Intent(v.getContext(), FullscreenVideoActivity.class);
+
+                               intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                               intent.putExtra("video_uri", url);
+                               intent.putExtra("playerState", mPlayerView.isPlaying());
+                               intent.putExtra("position", mPlayerView.getCurrentPosition());
+                               intent.putExtra("preferredAudioLanguage", preferredAudioLanguage);
+                               intent.putExtra("preferredTextLanguage", preferredTextLanguage);
+
+                              mPlayerView.setPlayWhenReady(false);
+                              //getContext().startActivity(intent);
+                               ((Activity)v.getContext()).startActivityForResult(intent, 201);
+
+                           }
+                       });
+
 
         mPlayerView.setPlayWhenReady(this.autoPlay);
 
@@ -518,12 +550,13 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
                         message.put("time", mPlayerView.getCurrentPosition() / 1000);
 
-                        //Log.d(TAG, "onTime: [time=" + mPlayerView.getCurrentPosition() / 1000 + "]");
                         eventSink.success(message);
                     }
 
                 } catch (Exception e) {
+
                     Log.e(TAG, "onTime: ", e);
+
                 }
 
                 onDuration();
@@ -732,6 +765,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                 message.put("duration", mediaDuration);
 
                 Log.d(TAG, "onDuration: [duration=" + mediaDuration + "]");
+
                 eventSink.success(message);
             }
 
@@ -817,6 +851,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
                         Log.d(TAG, "onSeek: [position=" + beforeSeek + "] [offset=" +
                                 newPosition.positionMs / 1000 + "]");
+
                         eventSink.success(message);
 
                     } catch (Exception e) {
@@ -865,9 +900,13 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                         message.put("name", "onPlay");
 
                         Log.d(TAG, "onPlay: []");
+
                         eventSink.success(message);
+
                     } catch (Exception e) {
+
                         Log.e(TAG, "onPlay: ", e);
+
                     }
 
                 } else {
