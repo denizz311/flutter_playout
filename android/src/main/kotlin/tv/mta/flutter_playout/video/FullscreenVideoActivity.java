@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.util.Log;
 import android.widget.ImageView;
 import android.os.Handler;
@@ -112,6 +113,8 @@ public class FullscreenVideoActivity extends Activity {
              finish();
             }
           });
+
+          getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
   }
   @Override
   public void onResume() {
