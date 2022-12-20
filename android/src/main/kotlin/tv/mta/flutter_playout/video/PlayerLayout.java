@@ -1,6 +1,7 @@
 package tv.mta.flutter_playout.video;
 
 import android.app.Activity;
+import android.content.res.Resources;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -15,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Bundle;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -23,6 +25,14 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.content.pm.ActivityInfo;
+import android.widget.ImageView;
+
+import android.os.Build.VERSION;
+import android.view.WindowManager;
+import android.widget.RelativeLayout;
+import android.view.ViewGroup;
+
+import android.content.ContextWrapper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -51,6 +61,8 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import androidx.activity.result.contract.ActivityResultContracts;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
+import android.app.FragmentManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,8 +70,10 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Objects;
+import android.view.Gravity;
 
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.JSONMethodCodec;
 import tv.mta.flutter_playout.FlutterAVPlayer;
@@ -83,6 +97,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
      */
     private static final int NOTIFICATION_ID = 0;
     public static SimpleExoPlayer activePlayer;
+    public StyledPlayerView view;
     private final String TAG = "PlayerLayout";
     /**
      * Reference to the {@link ExoPlayer}
@@ -109,6 +124,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
     private DefaultTrackSelector trackSelector;
 
+    private MethodChannel channel;
     /**
      * Context
      */
@@ -139,6 +155,8 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
     private JSONArray subtitles = null;
 
     private long mediaDuration = 0L;
+
+    private boolean isFullScreen = false;
     /**
      * Whether we have bound to a {@link MediaNotificationManagerService}.
      */
@@ -175,7 +193,8 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                         Activity activity,
                         BinaryMessenger messenger,
                         int id,
-                        Object arguments) {
+                        Object arguments,
+                        MethodChannel channel) {
 
         super(context);
 
@@ -186,6 +205,10 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
         this.messenger = messenger;
 
         this.viewId = id;
+
+        this.view = this;
+
+        this.channel = channel;
 
         try {
 
@@ -210,6 +233,8 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
             this.loop = args.getBoolean("loop");
 
             this.showControls = args.getBoolean("showControls");
+
+            this.isFullScreen = args.getBoolean("isFullScreen");
 
             try {
                 this.subtitles = args.getJSONArray("subtitles");
@@ -255,7 +280,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                 .setTrackSelector(trackSelector)
                 .build();
 
-        View controlView = this.findViewById(R.id.exo_basic_controls);
+        View controlView = view.findViewById(R.id.exo_basic_controls);
             controlView.findViewById(R.id.exo_fullscreen_button)
                        .setOnClickListener(new View.OnClickListener() {
                            @Override
@@ -270,9 +295,18 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                                intent.putExtra("preferredAudioLanguage", preferredAudioLanguage);
                                intent.putExtra("preferredTextLanguage", preferredTextLanguage);
 
-                              mPlayerView.setPlayWhenReady(false);
-                              //getContext().startActivity(intent);
-                               ((Activity)v.getContext()).startActivityForResult(intent, 201);
+                               pause();
+
+                               ((Activity)v.getContext()).startActivityForResult(intent, Activity.RESULT_OK);
+
+                                //makeActivityFullscreen((Activity)v.getContext());
+                                //makeActivityHorizontal(activity);
+
+                                /*HashMap<String, Object> args = new HashMap<String,Object>();
+                                args.put("position", mPlayerView.getCurrentPosition());
+                                args.put("autoPlay", mPlayerView.isPlaying());
+
+                                channel.invokeMethod("onFullScreenChanged", args);*/
 
                            }
                        });
@@ -291,11 +325,11 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
             mPlayerView.seekTo(this.position * 1000);
         }
 
-        setUseController(showControls);
+        view.setUseController(showControls);
 
         listenForPlayerTimeChange();
 
-        this.setPlayer(mPlayerView);
+        view.setPlayer(mPlayerView);
 
         eventChannel = new EventChannel(
                 messenger,
@@ -310,6 +344,33 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
         doBindMediaNotificationManagerService();
     }
+
+    public void makeActivityFullscreen(Activity activity) {
+
+            View decorView = activity.getWindow().getDecorView();
+
+            if (VERSION.SDK_INT >= 19) {
+                decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            } else {
+                decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
+            }
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        }
+
+
+        private FrameLayout.LayoutParams paramsNotFullscreen;
+
+        public void makeActivityHorizontal(Activity activity) {
+
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            paramsNotFullscreen = (FrameLayout.LayoutParams)instance.getLayoutParams();
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(paramsNotFullscreen);
+                            params.setMargins(0, 0, 0, 0);
+                            params.height= ViewGroup.LayoutParams.MATCH_PARENT;
+                            params.width=ViewGroup.LayoutParams.MATCH_PARENT;
+                            params.gravity = Gravity.CENTER;
+                            instance.setLayoutParams(params);
+        }
 
     private void setupMediaSession() {
 
@@ -333,7 +394,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
     private void setAudioMetadataWithArtwork() {
         if (artworkUrl != null && !artworkUrl.isEmpty()) {
 
-            Glide.with(this).asBitmap().load(artworkUrl).into(new CustomTarget<Bitmap>() {
+            Glide.with(view).asBitmap().load(artworkUrl).into(new CustomTarget<Bitmap>() {
                 @Override
                 public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
                     setAudioMetadata(resource);
@@ -489,7 +550,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
     private void cleanPlayerNotification() {
         NotificationManager notificationManager = (NotificationManager)
-                getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                view.getContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (notificationManager != null) {
 
@@ -661,6 +722,39 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
         } catch (Exception e) { /* ignore */ }
     }
 
+    public void onFullScreenChanged(Object arguments) {
+
+     try {
+
+               if (arguments instanceof HashMap) {
+
+               HashMap<String, Object> args = (HashMap<String, Object>) arguments;
+
+               boolean isFS = Boolean.parseBoolean(Objects.requireNonNull(args.get("isFullScreen")).toString());
+
+               this.isFullScreen = isFS;
+
+               View v = view.findViewById(R.id.exo_basic_controls);
+
+                ImageView fullscreenIcon = v.findViewById(R.id.exo_fullscreen_button);
+
+                if (this.isFullScreen) {
+
+                fullscreenIcon.setImageResource(R.drawable.ic_fullscreen_exit);
+
+                } else {
+
+                fullscreenIcon.setImageResource(R.drawable.ic_fullscreen);
+
+                }
+
+                }
+
+               //updateMediaSource();
+
+            } catch (Exception e) { /* ignore */ }
+    }
+
     public void onShowControlsFlagChanged(Object arguments) {
 
         try {
@@ -671,7 +765,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
                 boolean sc = Boolean.parseBoolean(Objects.requireNonNull(args.get("showControls")).toString());
 
-                setUseController(sc);
+                view.setUseController(sc);
             }
 
         } catch (Exception e) { /* ignore */ }
@@ -954,6 +1048,6 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
     }
 
     public void setActivity(Activity activity) {
-        this.activity = activity;
+        //this.activity = activity;
     }
 }

@@ -21,6 +21,7 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import android.net.Uri;
 import com.google.android.exoplayer2.util.Util;
 import java.util.HashMap;
+import io.flutter.plugin.common.MethodChannel;
 
 import android.content.Context;
 public class ExoPlayerViewManager {
@@ -52,8 +53,13 @@ public class ExoPlayerViewManager {
     this.video_uri = videoUri;
   }
 
-  public void prepareExoPlayer(Context context, StyledPlayerView exoPlayerView,
-  long position, String preferredAudioLanguage, String preferredTextLanguage, boolean playerState) {
+  public void prepareExoPlayer(
+  Context context,
+  StyledPlayerView exoPlayerView,
+  long position,
+  String preferredAudioLanguage,
+  String preferredTextLanguage,
+  boolean playerState) {
     if (context == null || exoPlayerView == null) {
       return;
     }
@@ -127,4 +133,10 @@ public class ExoPlayerViewManager {
         return player.getCurrentPosition();
       } else return -1;
   }
+
+   public boolean getPlayerState() {
+     if (player != null) {
+          return player.isPlaying();
+        } else return false;
+    }
 }

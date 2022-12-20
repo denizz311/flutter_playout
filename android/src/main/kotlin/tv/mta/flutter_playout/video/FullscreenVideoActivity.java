@@ -1,14 +1,21 @@
 package tv.mta.flutter_playout.video;
+
+import java.util.HashMap;
+import tv.mta.flutter_playout.video.ExoPlayerFragment;
+
+import io.flutter.plugin.common.MethodChannel;
 import android.content.Context;
 import android.content.Intent;
+
+import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import androidx.appcompat.app.AppCompatActivity;
-import com.google.android.exoplayer2.ExoPlayer;
-import android.app.Activity;
 import android.util.Log;
 import android.widget.ImageView;
+import android.os.Handler;
+import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -16,11 +23,11 @@ import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+
 import tv.mta.flutter_playout.R;
-import android.os.Handler;
 
 
-public class FullscreenVideoActivity extends AppCompatActivity {
+public class FullscreenVideoActivity extends Activity {
   /**
    * Some older devices needs a small delay between UI widget updates
    * and a change of the status and navigation bar.
@@ -92,14 +99,16 @@ public class FullscreenVideoActivity extends AppCompatActivity {
 
     fullscreenIcon.setImageResource(R.drawable.ic_fullscreen_exit);
 
-    fullscreenIcon.setOnClickListener(new View.OnClickListener() {
+    controlView.findViewById(R.id.exo_fullscreen_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-             Log.d("print", "result");
              Intent data = new Intent();
+
              data.putExtra("position", ExoPlayerViewManager.getInstance(mVideoUri).getPosition());
-             data.putExtra("playerState", isPlayerPlaying);
-             setResult(RESULT_OK, data);
+             data.putExtra("playerState", ExoPlayerViewManager.getInstance(mVideoUri).getPlayerState());
+
+             setResult(Activity.RESULT_OK, data);
+
              finish();
             }
           });
@@ -108,12 +117,14 @@ public class FullscreenVideoActivity extends AppCompatActivity {
   public void onResume() {
     super.onResume();
     ExoPlayerViewManager.getInstance(mVideoUri).goToForeground();
+    Log.d("action", "onResume");
   }
 
   @Override
   public void onPause() {
     super.onPause();
     ExoPlayerViewManager.getInstance(mVideoUri).goToBackground();
+    Log.d("action", "onPause");
   }
 
   @Override

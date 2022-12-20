@@ -1,26 +1,34 @@
 package tv.mta.flutter_playout.video;
 
+import org.jetbrains.annotations.NotNull;
+
 import android.app.Activity;
 import android.content.Context;
 import android.view.View;
-
-import org.jetbrains.annotations.NotNull;
 
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.platform.PlatformView;
 
+import tv.mta.flutter_playout.video.ExoPlayerFragment;
+
 public class PlayerView implements PlatformView, MethodChannel.MethodCallHandler {
 
     private final PlayerLayout player;
 
+    private final MethodChannel channel;
+
     PlayerView(Context context, Activity activity, int id, BinaryMessenger messenger, Object args) {
 
-        new MethodChannel(messenger, "tv.mta/NativeVideoPlayerMethodChannel_" + id)
-                .setMethodCallHandler(this);
+        channel = new MethodChannel(messenger, "tv.mta/NativeVideoPlayerMethodChannel_" + id);
 
-        player = new PlayerLayout(context, activity, messenger, id, args);
+        channel.setMethodCallHandler(this);
+
+        player = new ExoPlayerFragment(context, activity, messenger, id, args, channel).getPlayer();
+
+        //oldVersion
+        //new PlayerLayout(context, activity, messenger, id, args);
     }
 
     @Override
@@ -29,7 +37,8 @@ public class PlayerView implements PlatformView, MethodChannel.MethodCallHandler
     }
 
     public void setActivity(Activity activity) {
-        player.setActivity(activity);
+        //oldVersion
+        //player.setActivity(activity);
     }
 
     @Override
@@ -72,6 +81,10 @@ public class PlayerView implements PlatformView, MethodChannel.MethodCallHandler
                 dispose();
                 result.success(true);
                 break;
+            case "onFullScreenChanged":
+               player.onFullScreenChanged(call.arguments);
+               result.success(true);
+               break;
             default:
                 result.notImplemented();
         }

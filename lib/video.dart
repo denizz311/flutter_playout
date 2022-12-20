@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:rxdart/subjects.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_playout/player_state.dart';
 import 'package:flutter_playout/textTrack.dart';
+import 'package:wakelock/wakelock.dart';
 
 /// Video plugin for playing HLS stream using native player. [autoPlay] flag
 /// controls whether to start playback as soon as player is ready. To show/hide
@@ -39,6 +42,9 @@ class Video extends StatefulWidget {
   final double position;
   final Function? onViewCreated;
   final PlayerState desiredState;
+  final bool isFullScreen;
+  final Stream<bool>? isFullScreenStream;
+  final Stream<bool>? isFullScreenAndroidStream;
 
   const Video(
       {Key? key,
@@ -55,6 +61,9 @@ class Video extends StatefulWidget {
       this.position = -1,
       this.onViewCreated,
       this.desiredState = PlayerState.PLAYING,
+      this.isFullScreen = false,
+      this.isFullScreenStream,
+      this.isFullScreenAndroidStream,
       this.textTracks})
       : super(key: key);
 
@@ -66,11 +75,22 @@ class _VideoState extends State<Video> {
   MethodChannel? _methodChannel;
   int? _platformViewId;
   Widget _playerWidget = Container();
+  late Subject<bool> androidFullScreenSub;
+  late bool _isFullScreen;
 
   @override
   void initState() {
     super.initState();
     _setupPlayer();
+    _isFullScreen = widget.isFullScreen;
+    widget.isFullScreenStream?.listen((event) {
+      _onFullScreenChanged(forceState: event);
+    });
+
+    androidFullScreenSub = BehaviorSubject<bool>.seeded(widget.isFullScreen);
+    androidFullScreenSub.listen((event) {
+      _onFullScreenChanged(forceState: event);
+    });
   }
 
   @override
@@ -97,6 +117,7 @@ class _VideoState extends State<Video> {
             "artworkUrl": widget.artworkUrl ?? "",
             "preferredAudioLanguage": widget.preferredAudioLanguage ?? "mul",
             "isLiveStream": widget.isLiveStream,
+            "isFullScreen": widget.isFullScreen,
             "position": widget.position,
             "textTracks": TextTrack.toJsonFromList(widget.textTracks ?? []),
             "preferredTextLanguage": widget.preferredTextLanguage ?? "",
@@ -164,6 +185,9 @@ class _VideoState extends State<Video> {
     if (oldWidget.desiredState != widget.desiredState) {
       _onDesiredStateChanged(oldWidget);
     }
+    if (oldWidget.isFullScreen != widget.isFullScreen) {
+      _onFullScreenChanged();
+    }
     if (oldWidget.showControls != widget.showControls) {
       _onShowControlsFlagChanged();
     }
@@ -189,6 +213,15 @@ class _VideoState extends State<Video> {
     _platformViewId = viewId;
     _methodChannel =
         MethodChannel("tv.mta/NativeVideoPlayerMethodChannel_$viewId");
+    _methodChannel?.setMethodCallHandler((call) async {
+      if (call.method == 'onFullScreenChanged') {
+        _isFullScreen = !_isFullScreen;
+        if (Platform.isAndroid) {
+          androidFullScreenSub.sink.add(_isFullScreen);
+        }
+      }
+      return call.arguments;
+    });
   }
 
   /// The [desiredState] flag has changed so need to update playback to
@@ -205,6 +238,12 @@ class _VideoState extends State<Video> {
         _pausePlayback();
         break;
     }
+  }
+
+  void _onFullScreenChanged({bool? forceState}) async {
+    _methodChannel!.invokeMethod("onFullScreenChanged", {
+      "isFullScreen": forceState ?? widget.isFullScreen,
+    });
   }
 
   void _onShowControlsFlagChanged() async {
