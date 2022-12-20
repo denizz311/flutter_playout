@@ -237,6 +237,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
             this.isFullScreen = args.getBoolean("isFullScreen");
 
             try {
+
                 this.subtitles = args.getJSONArray("subtitles");
 
             } catch (Exception e) {/* ignore */}
@@ -469,7 +470,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
 
         mMediaSessionCompat.setPlaybackState(newPlaybackState.build());
 
-        updateNotification(capabilities);
+        //updateNotification(capabilities);
     }
 
     private @PlaybackStateCompat.Actions
