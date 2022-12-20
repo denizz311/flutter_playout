@@ -100,7 +100,7 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
     public StyledPlayerView view;
     private final String TAG = "PlayerLayout";
     /**
-     * Reference to the {@link ExoPlayer}
+     * Reference to the {@link SimpleExoPlayer}
      */
     SimpleExoPlayer mPlayerView;
     boolean isBound = true;

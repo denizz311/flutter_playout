@@ -151,6 +151,7 @@ class _VideoState extends State<Video> {
             "artworkUrl": widget.artworkUrl ?? "",
             "preferredAudioLanguage": widget.preferredAudioLanguage ?? "mul",
             "isLiveStream": widget.isLiveStream,
+            "isFullScreen": widget.isFullScreen,
             "position": widget.position,
           },
           creationParamsCodec: const JSONMessageCodec(),
