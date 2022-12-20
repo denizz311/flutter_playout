@@ -71,7 +71,7 @@ class Video extends StatefulWidget {
   _VideoState createState() => _VideoState();
 }
 
-class _VideoState extends State<Video> {
+class _VideoState extends State<Video> with WidgetsBindingObserver {
   MethodChannel? _methodChannel;
   int? _platformViewId;
   Widget _playerWidget = Container();
@@ -91,6 +91,18 @@ class _VideoState extends State<Video> {
     androidFullScreenSub.listen((event) {
       _onFullScreenChanged(forceState: event);
     });
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausePlayback();
+    } else if (state == AppLifecycleState.resumed) {
+      _resumePlayback();
+    } else {
+      _pausePlayback();
+    }
   }
 
   @override
