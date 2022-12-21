@@ -13,6 +13,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  wakelock: ^0.6.2
+  rxdart: ^0.27.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

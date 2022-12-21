@@ -99,7 +99,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       _pausePlayback();
     } else if (state == AppLifecycleState.resumed) {
-      _resumePlayback();
+      //_resumePlayback();
     } else {
       _pausePlayback();
     }
@@ -231,6 +231,14 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         _isFullScreen = !_isFullScreen;
         if (Platform.isAndroid) {
           androidFullScreenSub.sink.add(_isFullScreen);
+          if (call.arguments != null) {
+            var pos = call.arguments["position"] / 1000;
+            _methodChannel!.invokeMethod(
+                "seekTo", {"position": double.parse(pos.toString())});
+            if (call.arguments["isPlayerPlaying"] == true) {
+              _resumePlayback();
+            }
+          }
         }
       }
       return call.arguments;

@@ -287,18 +287,25 @@ public class PlayerLayout extends StyledPlayerView implements FlutterAVPlayer, E
                            @Override
                            public void onClick(View v) {
 
-                           Intent intent = new Intent(v.getContext(), FullscreenVideoActivity.class);
+                           boolean state = mPlayerView.isPlaying();
 
-                               intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                               intent.putExtra("video_uri", url);
-                               intent.putExtra("playerState", mPlayerView.isPlaying());
-                               intent.putExtra("position", mPlayerView.getCurrentPosition());
-                               intent.putExtra("preferredAudioLanguage", preferredAudioLanguage);
-                               intent.putExtra("preferredTextLanguage", preferredTextLanguage);
+                           pause();
 
-                               pause();
+                           FullScreenVideoActivity.companionProp = channel;
 
-                               ((Activity)v.getContext()).startActivityForResult(intent, Activity.RESULT_OK);
+                           Intent intent = FullScreenVideoActivity.newIntent(
+                           context,
+                            url,
+                            mPlayerView.getCurrentPosition(),
+                            state,
+                            preferredAudioLanguage,
+                            preferredTextLanguage,
+                            channel
+                            );
+
+                            ((Activity)v.getContext()).startActivity(intent);
+
+                             channel.invokeMethod("onFullScreenChanged", null);
 
                                 //makeActivityFullscreen((Activity)v.getContext());
                                 //makeActivityHorizontal(activity);

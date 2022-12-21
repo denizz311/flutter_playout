@@ -39,9 +39,9 @@
             </intent-filter>
         </receiver>
         <activity
-            android:name=".video.FullscreenVideoActivity"
+            android:name=".video.FullScreenVideoActivity"
             android:noHistory="false"
-            android:screenOrientation="landscape"
+            android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:theme="@style/FullscreenTheme"/>
         <activity

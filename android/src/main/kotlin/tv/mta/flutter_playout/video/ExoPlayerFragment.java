@@ -57,7 +57,7 @@ public class ExoPlayerFragment extends Activity {
         //View rootView = inflater.inflate(R.layout.activity_fullscreen_video, container, false);
         //return rootView;
 
-        Intent intent = new Intent(this, FullscreenVideoActivity.class);
+        Intent intent = new Intent(this, FullScreenVideoActivity.class);
 
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
