@@ -72,7 +72,7 @@ public class ExoPlayerFragment extends Activity {
         //oldVersion
         //mPlayerView = getView().findViewById(R.id.player_view);
 
-        return new PlayerLayout(context, this , messenger, id, args, channel);
+        return new PlayerLayout(context, this, messenger, id, args, channel);
     }
 
     @Override
